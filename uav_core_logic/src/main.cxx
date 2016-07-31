@@ -37,31 +37,29 @@ void uavSetup()
 int main(int argc, char *argv[])
 {
     ros::init(argc, argv, "uavCoreLogic");
-    ros::NodeHandle nh;
+    ros::NodeHandle nhPub, nhSub;
 
-    pubServo   = nh.advertise<std_msgs::String>("uavCoreLogicServo",   1000);
-    pubOnboard = nh.advertise<std_msgs::String>("uavCoreLogicOnboard", 1000);
+    pubServo   = nhPub.advertise<std_msgs::String>("uavCoreLogicServo",   1000);
+    pubOnboard = nhPub.advertise<std_msgs::String>("uavCoreLogicOnboard", 1000);
 
-//    subGroundCar = nh.subscribe("uavGroundCar", 1000, callBackGroundCar);
-//    subUavVision = nh.subscribe("uavUavVision", 1000, callBackUavVision);
-//    subGuidance  = nh.subscribe("uavGuidance",  1000, callBackGuidance );
+    subGroundCar = nhSub.subscribe("uavGroundCar", 1000, callBackGroundCar);
+    subUavVision = nhSub.subscribe("uavUavVision", 1000, callBackUavVision);
+    subGuidance  = nhSub.subscribe("uavGuidance",  1000, callBackGuidance );
 
-
-    while (nh.ok())
+    while (nhPub.ok() && nhSub.ok())
     {
         ros::spinOnce();
 
-        stringstream ss;
-
-        int ang1, ang2;
-        cout << "Input:  ";
-        cin >> ang1 >> ang2;
-        ss << ang1 << "," << ang2;
-        std_msgs::String outStr;
-        outStr.data = ss.str();
-        pubServo.publish(outStr);
-        if(ang1 == -1)
-            break;
+//        stringstream ss;
+//        int ang1, ang2;
+//        cout << "Input:  ";
+//        cin >> ang1 >> ang2;
+//        ss << ang1 << "," << ang2;
+//        std_msgs::String outStr;
+//        outStr.data = ss.str();
+//        pubServo.publish(outStr);
+//        if(ang1 == -1)
+//            break;
 
     }
 
