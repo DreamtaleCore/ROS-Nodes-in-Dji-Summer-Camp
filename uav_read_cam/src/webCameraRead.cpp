@@ -4,7 +4,9 @@
  * @Date: 2014-11-14
  */
 
-#define CAMERA_NUM 0
+#define CAMERA_NUM "/home/yf/123.avi"
+
+//#define CAMERA_NUM 0
 
 #include<sstream>
 #include<iostream>

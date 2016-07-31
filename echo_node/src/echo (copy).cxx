@@ -14,9 +14,9 @@ std_msgs::String pubData;
 //    usleep(5000);
 //}
 
-void chatterCallback(const std_msgs::Float32MultiArray::ConstPtr &msgs)
+void chatterCallback(const std_msgs::Int16MultiArray::ConstPtr &msgs)
 {
-    ROS_INFO("I get the data: [%lf, %lf, %lf]\n", msgs->data[0], msgs->data[1], msgs->data[2]);
+    ROS_INFO("I get the data: [%d, %d, %d]\n", msgs->data[0], msgs->data[1], msgs->data[2]);
 }
 
 int main(int argc, char *argv[])
@@ -27,7 +27,7 @@ int main(int argc, char *argv[])
     dataPub = nh.advertise<std_msgs::String>("echoNode", 1000);
 
     //ros::Subscriber sub = nh.subscribe("serialRead", 1000, chatterCallback);
-    ros::Subscriber sub = nh.subscribe("/uav_vision/findMarker", 1000, chatterCallback);
+    ros::Subscriber sub = nh.subscribe("/uav_vision/findDoll", 1000, chatterCallback);
 
     ros::spin();
 
