@@ -213,19 +213,19 @@ Mat Utilities::getPosition(Mat &img, Point2f* pointsIn){
     imagePoints.push_back(Point2f(pointsIn[2].x, pointsIn[2].y));
     imagePoints.push_back(Point2f(pointsIn[3].x, pointsIn[3].y));
 
-    float tmp1[3][3] = {{720.0694,0,319.5}
-                        ,{0, 720.0694, 239.5}
-                        ,{0,0,1}};
-    Mat cameMatrix(3,3,CV_32F, tmp1);
+    float camMatData[3][3] = {{720.0694,0,319.5},
+                        {0, 720.0694, 239.5},
+                        {0,0,1}};
+    Mat cameMatrix(3,3,CV_32F, camMatData);
 
 
-    float tmp2[5] = {-0.175335,0.360192,0,0, -1.464377};
-    Mat distCoeffs(1,5,CV_32F,tmp2);
+    float tmpDistCoeffs[5] = {-0.175335,0.360192,0,0, -1.464377};
+    Mat distCoeffs(1,5,CV_32F,tmpDistCoeffs);
 
 
     Mat rvec(3,3,CV_32F), tvec(3,3,CV_32F);
 
-    solvePnP(objectPoints,imagePoints,cameMatrix,distCoeffs,rvec,tvec);
+    solvePnP(objectPoints, imagePoints, cameMatrix, distCoeffs, rvec, tvec);
     //Mat M = getPerspectiveTransform(pointsIn, pointsRes);
     //cout << M << endl;
     //warpPerspective(img, img_out, M, Size(400,400), cv::INTER_NEAREST);
