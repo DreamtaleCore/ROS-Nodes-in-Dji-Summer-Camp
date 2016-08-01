@@ -14,10 +14,8 @@
 
 #include <opencv2/opencv.hpp>
 
-#include "DJI_guidance.h"
-#include "DJI_utility.h"
-
-#include <std_msgs/Float32MultiArray.h>
+#include <DJI_guidance.h>
+#include <DJI_utility.h>
 
 #include <geometry_msgs/TransformStamped.h> //IMU
 #include <geometry_msgs/Vector3Stamped.h> //velocity
@@ -31,11 +29,7 @@ ros::Publisher obstacle_distance_pub;
 ros::Publisher velocity_pub;
 ros::Publisher ultrasonic_pub;
 
-ros::Publisher motion_pub;
-ros::Publisher pubVelPosByVo;
-
 using namespace cv;
-using namespace std;
 
 #define WIDTH 320
 #define HEIGHT 240
@@ -51,6 +45,10 @@ Mat             g_greyscale_image_left(HEIGHT, WIDTH, CV_8UC1);
 Mat				g_greyscale_image_right(HEIGHT, WIDTH, CV_8UC1);
 Mat				g_depth(HEIGHT,WIDTH,CV_16SC1);
 Mat				depth8(HEIGHT, WIDTH, CV_8UC1);
+
+class ss{
+
+};
 
 std::ostream& operator<<(std::ostream& out, const e_sdk_err_code value){
 	const char* s = 0;
@@ -220,54 +218,6 @@ int my_callback(int data_type, int data_len, char *content)
 		ultrasonic_pub.publish(g_ul);
     }
 
-	/* motion */
-	//added by qian yang
-	if ( e_motion == data_type && NULL != content )
-	{
-		motion *mo = (motion*)content;
-		if (verbosity > 1) {
-			printf( "frame index: %d, stamp: %d\n", mo->frame_index, mo->time_stamp );
-			for ( int d = 0; d < CAMERA_PAIR_NUM; ++d )
-			{
-				printf( "global_x: %f, global_y: %f, global_z: %f\n", mo->position_in_global_x, mo->position_in_global_y, mo->position_in_global_z );
-			}
-		}
-
-		// publish motion data
-		geometry_msgs::Vector3Stamped g_mo;
-		g_mo.header.frame_id = "guidance";
-		g_mo.header.stamp = ros::Time::now();
-
-		g_mo.vector.x = mo->position_in_global_x;
-		g_mo.vector.y = mo->position_in_global_y;
-		g_mo.vector.z = mo->position_in_global_z;
-
-        motion_pub.publish(g_mo);
-
-        // Changed by DreamTale
-        // NO time stamp, just publish info
-        // +-------+-------+-------+-------+-------+-------+
-        // | vel_x | vel_y | vel_z | pos_x | pos_y | pos_z |
-        // +-------+-------+-------+-------+-------+-------+
-        std_msgs::Float32MultiArray voInfo;
-        //The unit is millimeter/second
-        voInfo.data.push_back(mo->velocity_in_global_x);
-        voInfo.data.push_back(mo->velocity_in_global_y);
-        voInfo.data.push_back(mo->velocity_in_global_z);
-        voInfo.data.push_back(mo->position_in_global_x);
-        voInfo.data.push_back(mo->position_in_global_y);
-        voInfo.data.push_back(mo->position_in_global_z);
-
-        cout << mo->velocity_in_global_x << endl;
-        cout << mo->velocity_in_global_y << endl;
-        cout << mo->velocity_in_global_z << endl;
-        cout << "++++++++++++++++++++++++++++++++" << endl << endl;
-
-        pubVelPosByVo.publish(voInfo);
-
-	}
-	//added by qian yang
-
     g_lock.leave();
     g_event.set_event();
 
@@ -304,10 +254,6 @@ int main(int argc, char** argv)
     obstacle_distance_pub	= my_node.advertise<sensor_msgs::LaserScan>("/guidance/obstacle_distance",1);
     ultrasonic_pub			= my_node.advertise<sensor_msgs::LaserScan>("/guidance/ultrasonic",1);
 
-	motion_pub				= my_node.advertise<geometry_msgs::Vector3Stamped>("/guidance/position", 1);
-
-    pubVelPosByVo           = my_node.advertise<std_msgs::Float32MultiArray>("/uav_guider/velPosByVo", 50);
-
     /* initialize guidance */
     reset_config();
     int err_code = init_transfer();
@@ -342,7 +288,6 @@ int main(int argc, char** argv)
     select_ultrasonic();
     select_obstacle_distance();
     select_velocity();
-	select_motion();
     /* start data transfer */
     err_code = set_sdk_event_handler(my_callback);
     RETURN_IF_ERR(err_code);
@@ -405,8 +350,6 @@ int main(int argc, char** argv)
                 select_ultrasonic();
                 select_obstacle_distance();
                 select_velocity();
-
-				select_motion();    //position
 
 				err_code = start_transfer();
 				RETURN_IF_ERR(err_code);

@@ -3,6 +3,7 @@
 
 #include <ros/ros.h>
 #include <std_msgs/String.h>
+#include <std_msgs/Int32MultiArray.h>
 #include <std_msgs/UInt32.h>
 #include <std_msgs/Float64.h>
 #include <std_msgs/Float64MultiArray.h>

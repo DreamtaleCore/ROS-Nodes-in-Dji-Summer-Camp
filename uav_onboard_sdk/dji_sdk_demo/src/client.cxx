@@ -1,6 +1,7 @@
 #include <ros/ros.h>
-#include <std_msgs/UInt8MultiArray.h>
+#include <std_msgs/UInt32MultiArray.h>
 #include <std_msgs/Float32MultiArray.h>
+#include <std_msgs/Int32MultiArray.h>
 #include <stdio.h>
 #include <dji_sdk/dji_drone.h>
 #include <vector>
@@ -19,12 +20,7 @@ enum uavCtrlSignal
     uavHangSlient,
     uavGoFlightHeigh,
     uavGoMissionHeigh,
-    uavMovFront,
-    uavMovBack,
-    uavMovLeft,
-    uavMovRight,
-    uavTurnLeft,
-    uavTurnRight,
+    uavMovVelocity,
     uavForceMannul,
     uavGetCtrlAbility,
     uavControlSum
@@ -35,52 +31,26 @@ DJIDrone* drone;
 const float missioHeight = 1.700;
 const float flightHeight = 0.800;
 
-void coreLogicFunc(vector<int>& _cmd)
+// void coreLogicFunc(vector<int> &_cmd)
+void callBackMarkerCtrl(const std_msgs::Int32MultiArray::ConstPtr& msg)
 {
-    int cmd = _cmd[0];
+    int cmd = msg->data[0];
     double correntX, correntY, correntZ;
     switch (cmd) {
     case uavGetCtrlAbility:
         drone->request_sdk_permission_control();
         break;
 
-    case uavMovFront:
+    case uavMovVelocity:
         drone->attitude_control( Flight::HorizontalLogic::HORIZONTAL_POSITION |
                                  Flight::VerticalLogic::VERTICAL_VELOCITY |
                                  Flight::YawLogic::YAW_ANGLE |
                                  Flight::HorizontalCoordinate::HORIZONTAL_BODY |
                                  Flight::SmoothMode::SMOOTH_ENABLE,
-                                 3, 3, 0, 0 );
-        usleep(20000);
-        break;
-
-    case uavMovBack:
-        drone->attitude_control( Flight::HorizontalLogic::HORIZONTAL_POSITION |
-                                 Flight::VerticalLogic::VERTICAL_VELOCITY |
-                                 Flight::YawLogic::YAW_ANGLE |
-                                 Flight::HorizontalCoordinate::HORIZONTAL_BODY |
-                                 Flight::SmoothMode::SMOOTH_ENABLE,
-                                 -3, -3, 0, 0);
-        usleep(20000);
-        break;
-
-    case uavMovLeft:
-        drone->attitude_control( Flight::HorizontalLogic::HORIZONTAL_POSITION |
-                                 Flight::VerticalLogic::VERTICAL_VELOCITY |
-                                 Flight::YawLogic::YAW_ANGLE |
-                                 Flight::HorizontalCoordinate::HORIZONTAL_BODY |
-                                 Flight::SmoothMode::SMOOTH_ENABLE,
-                                 3, -3, 0, 0);
-        usleep(20000);
-
-        break;
-    case uavMovRight:
-        drone->attitude_control( Flight::HorizontalLogic::HORIZONTAL_POSITION |
-                                 Flight::VerticalLogic::VERTICAL_VELOCITY |
-                                 Flight::YawLogic::YAW_ANGLE |
-                                 Flight::HorizontalCoordinate::HORIZONTAL_BODY |
-                                 Flight::SmoothMode::SMOOTH_ENABLE,
-                                 -3, 3, 0, 0);
+                                 (float)msg->data[1] / 100,                 // x
+                                 (float)msg->data[1] / 100,                 // y
+                                 (float)msg->data[1] / 100,                 // z
+                                 (float)msg->data[1] / 100);                // yaw
         usleep(20000);
         break;
 
@@ -104,9 +74,6 @@ void coreLogicFunc(vector<int>& _cmd)
         drone->release_sdk_permission_control();
 
         break;
-    case uavTurnLeft:       // Disabled
-    case uavTurnRight:
-        break;
 
     case uavHangSlient:     // Default status is hang slient
     default:
@@ -114,30 +81,30 @@ void coreLogicFunc(vector<int>& _cmd)
     }
 }
 
-void callBackMarkerCtrl(const std_msgs::Float32MultiArray::ConstPtr& msg)
-{
-    vector<int> cmd;
-    if(msg->data[3] > 50.0)
-    {
-        cmd.push_back(uavMovLeft);
-        coreLogicFunc(cmd);
-    }
-    if(msg->data[3] < -50.0)
-    {
-        cmd.push_back(uavMovRight);
-        coreLogicFunc(cmd);
-    }
-    if(msg->data[4] > 50.0)
-    {
-        cmd.push_back(uavMovBack);
-        coreLogicFunc(cmd);
-    }
-    if(msg->data[4] < -50.0)
-    {
-        cmd.push_back(uavMovFront);
-        coreLogicFunc(cmd);
-    }
-}
+//void callBackMarkerCtrl(const std_msgs::Float32MultiArray::ConstPtr& msg)
+//{
+//    vector<int> cmd;
+//    if(msg->data[3] > 50.0)
+//    {
+//        cmd.push_back(uavMovLeft);
+//        coreLogicFunc(cmd);
+//    }
+//    if(msg->data[3] < -50.0)
+//    {
+//        cmd.push_back(uavMovRight);
+//        coreLogicFunc(cmd);
+//    }
+//    if(msg->data[4] > 50.0)
+//    {
+//        cmd.push_back(uavMovBack);
+//        coreLogicFunc(cmd);
+//    }
+//    if(msg->data[4] < -50.0)
+//    {
+//        cmd.push_back(uavMovFront);
+//        coreLogicFunc(cmd);
+//    }
+//}
 
 int main(int argc, char *argv[])
 {
@@ -146,17 +113,11 @@ int main(int argc, char *argv[])
 
     drone = new DJIDrone(nh);
 
-    // Get the control ability first
-    drone->check_version();       // Check the onboard sdk verison
-    drone->request_sdk_permission_control(); // Get the permission
+    //ros::Subscriber subMarkTrack;
+    ros::Subscriber subCoreLogic;
 
-    usleep(5000000);
-
-    drone->takeoff();              // 1.2m
-
-    ros::Subscriber subMarkTrack;
-
-    subMarkTrack = nh.subscribe("/uav_vision/findMarker", 1000, callBackMarkerCtrl);
+    //subMarkTrack = nh.subscribe("/uav_vision/findMarker", 1000, callBackMarkerCtrl);
+    subCoreLogic = nh.subscribe("/uav_ctrl/onboard", 1000, callBackMarkerCtrl);
 
     ros::spin();
 

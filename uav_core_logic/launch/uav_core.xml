@@ -1,3 +1,9 @@
+<?xml version = "1.0"?>
 <launch>
-    <node pkg = "read_cam" type>
+    <node name = "coreLogic" pkg = "uav_core_logic" type = "coreLogic" output = "screen">
+    <param name = "KP_X" type = "double" value = "0.1" />
+    <param name = "KP_Y" type = "double" value = "0.1" />
+    <param name = "KD_X" type = "double" value = "0.1" />
+    <param name = "KD_Y" type = "double" value = "0.1" />
+    </node>
 </launch>
