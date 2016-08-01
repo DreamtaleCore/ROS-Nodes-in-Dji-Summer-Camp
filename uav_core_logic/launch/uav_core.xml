@@ -1,0 +1,3 @@
+<launch>
+    <node pkg = "read_cam" type>
+</launch>

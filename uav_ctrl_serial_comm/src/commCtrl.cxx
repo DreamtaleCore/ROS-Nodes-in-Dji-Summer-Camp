@@ -32,7 +32,7 @@ int openDev(char *Dev)
  * @param the device number
  * @param speed of comm
  */
-void setSpeed(int fd, int speed)
+int setSpeed(int fd, int speed)
 {
     int   i;
     int   status;
@@ -48,12 +48,13 @@ void setSpeed(int fd, int speed)
             status = tcsetattr(fd, TCSANOW, &Opt);
             if  (status != 0)
             {
-                perror("tcsetattr fd1");
-                return;
+                //perror("tcsetattr fd1");
+                return -1;
             }
             tcflush(fd,TCIOFLUSH);
         }
     }
+    return 0;
 }
 
 /**
@@ -84,7 +85,8 @@ int setParity(int fd,int databits,int stopbits,int parity)
         options.c_cflag |= CS8;
         break;
     default:
-        fprintf(stderr,"Unsupported data size/n"); return (FALSE);
+        //fprintf(stderr,"Unsupported data size/n");
+        return (FALSE);
     }
     switch (parity)
     {
@@ -109,7 +111,7 @@ int setParity(int fd,int databits,int stopbits,int parity)
             options.c_cflag &= ~PARENB;
             options.c_cflag &= ~CSTOPB;break;
         default:
-            fprintf(stderr,"Unsupported parity/n");
+            //fprintf(stderr,"Unsupported parity/n");
             return (FALSE);
     }
     /* set the stop bit*/
@@ -133,7 +135,7 @@ int setParity(int fd,int databits,int stopbits,int parity)
     options.c_cc[VMIN] = 0;         /* Update the options and do it NOW */
     if (tcsetattr(fd,TCSANOW,&options) != 0)
     {
-        perror("SetupSerial 3");
+        //perror("SetupSerial 3");
         return (FALSE);
     }
     return (TRUE);
@@ -152,10 +154,12 @@ int commRead(string& data, string port)
     if(!isOpened)
     {
         fd = openDev((char*)port.c_str());
-        setSpeed(fd, 9600);
+        if(setSpeed(fd, 9600) == -1)
+            return -1;
         if (setParity(fd, 8, 1,'N') == FALSE)
         {
-            printf("Set Parity Error/n");
+            //printf("Set Parity Error/n");
+            printf("Please check the usb port number or NOT permissions.\n");
             return -1;
         }
     }
@@ -188,7 +192,8 @@ int commWrite(string data, string port)
         setSpeed(fd, 9600);
         if (setParity(fd,8,1,'N') == FALSE)
         {
-            printf("Set Parity Error/n");
+            // printf("Set Parity Error/n");
+            printf("Please check the usb port number or NOT permissions.\n");
             return -1;
         }
     }
@@ -196,7 +201,8 @@ int commWrite(string data, string port)
     nwrite = write(fd, data.c_str() ,data.length());
     if(nwrite == -1)
     {
-        printf("Wirte sbuf error./n");
+        // printf("Wirte sbuf error./n");
+        printf("Please check the usb port number or NOT permissions.\n");
         return -1;
     }
 

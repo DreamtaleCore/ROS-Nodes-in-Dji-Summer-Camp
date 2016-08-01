@@ -67,6 +67,21 @@ int main(int argc, char** argv)
     ros::Rate loopRate(30);
 
     VideoCapture cap(CAMERA_NUM);
+
+    // If default divice failed, auto detect camera device
+    int tmpCamNum = 0;
+    while (!cap.isOpened() && tmpCamNum++ < 10)
+    {
+        cap.open(tmpCamNum);
+    }
+    if(!cap.isOpened())
+    {
+        cout << "Please plug in a camera device or check it!" << endl;
+        return -1;
+    }
+
+    cout << "*************************" << endl
+         << "Camera setup successfully!" << endl;
     cap.set(CV_CAP_PROP_FRAME_WIDTH ,640);
     cap.set(CV_CAP_PROP_FRAME_HEIGHT ,480);
     cap.set(CV_CAP_PROP_EXPOSURE ,30);
@@ -75,15 +90,15 @@ int main(int argc, char** argv)
 
     if( n.ok() )
     {
-        cap>>view;
+        cap >> view;
         imageSize = view.size();
 
         while (nh.ok())
         {
-            cap>>view;
+            cap >> view;
             Image = view;
 
-            imshow("Undistored View", Image);
+            imshow("Source View", Image);
 
             outMsg.image = Image;
             outMsg.header.stamp = ros::Time::now();
