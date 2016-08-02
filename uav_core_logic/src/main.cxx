@@ -7,10 +7,18 @@
 
 #include <opencv2/opencv.hpp>
 
-double KP_X = 0.0;
-double KP_Y = 0.0;
-double KD_X = 0.0;
-double KD_Y = 0.0;
+double KP_X = 0.01;
+double KP_Y = 0.01;
+double KP_Z = 0.01;
+double KP_W = 0.01; // yaw
+double KI_X = 0.01;
+double KI_Y = 0.01;
+double KI_Z = 0.01;
+double KI_W = 0.01; // yaw
+double KD_X = 0.01;
+double KD_Y = 0.01;
+double KD_Z = 0.01;
+double KD_W = 0.01; // yaw
 
 ros::Publisher pubServo;
 ros::Publisher pubOnboard;
@@ -37,9 +45,9 @@ enum uavCtrlSignal
 };
 
 volatile int uavStatus = uavStateWait;
-// +-------+-------+-------+-------+-------+-------+
-// | vel_x | vel_y | vel_z | pos_x | pos_y | pos_z |
-// +-------+-------+-------+-------+-------+-------+
+// +-------+-------+-------+-------+-------+-------+---------+
+// | vel_x | vel_y | vel_z | pos_x | pos_y | pos_z | pos_yaw |
+// +-------+-------+-------+-------+-------+-------+---------+
 volatile double droneVoInfo[6] = {0.0};
 
 void callBackGroundBuffCar(const std_msgs::String::ConstPtr& msg)
@@ -116,7 +124,6 @@ void uavSetup()
 
     // Step 3: the UAV is ready, Let's take missions
     uavStatus = uavStateReady;
-
 }
 
 int main(int argc, char *argv[])
@@ -125,9 +132,17 @@ int main(int argc, char *argv[])
     ros::NodeHandle nhPub, nhSub;
 
     ros::param::get("~KP_X", KP_X);
-    ros::param::get("~KP_X", KP_Y);
-    ros::param::get("~KP_X", KD_X);
-    ros::param::get("~KP_X", KD_Y);
+    ros::param::get("~KP_Y", KP_Y);
+    ros::param::get("~KP_Z", KP_Z);
+    ros::param::get("~KP_W", KP_W);
+    ros::param::get("~KI_X", KI_X);
+    ros::param::get("~KI_Y", KI_Y);
+    ros::param::get("~KI_Z", KI_Z);
+    ros::param::get("~KI_W", KI_W);
+    ros::param::get("~KD_X", KD_X);
+    ros::param::get("~KD_Y", KD_Y);
+    ros::param::get("~KD_Z", KD_Z);
+    ros::param::get("~KD_W", KD_W);
 
     ros::Subscriber subGroundCar;
     ros::Subscriber subUavGuidanceVoInfo;

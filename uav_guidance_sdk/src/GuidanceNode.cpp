@@ -1,4 +1,4 @@
-/*
+ /*
  * GuidanceNode.cpp
  *
  *  Created on: Apr 29, 2015
@@ -13,6 +13,7 @@
 #include <sensor_msgs/image_encodings.h>
 
 #include <opencv2/opencv.hpp>
+#include <cmath>
 
 #include "DJI_guidance.h"
 #include "DJI_utility.h"
@@ -246,9 +247,9 @@ int my_callback(int data_type, int data_len, char *content)
 
         // Changed by DreamTale
         // NO time stamp, just publish info
-        // +-------+-------+-------+-------+-------+-------+
-        // | vel_x | vel_y | vel_z | pos_x | pos_y | pos_z |
-        // +-------+-------+-------+-------+-------+-------+
+        // +-------+-------+-------+-------+-------+-------+---------+
+        // | vel_x | vel_y | vel_z | pos_x | pos_y | pos_z | pos_yaw |
+        // +-------+-------+-------+-------+-------+-------+---------+
         std_msgs::Float32MultiArray voInfo;
         //The unit is millimeter/second
         voInfo.data.push_back(mo->velocity_in_global_x);
@@ -257,6 +258,15 @@ int my_callback(int data_type, int data_len, char *content)
         voInfo.data.push_back(mo->position_in_global_x);
         voInfo.data.push_back(mo->position_in_global_y);
         voInfo.data.push_back(mo->position_in_global_z);
+
+        // Compute the yaw value
+        double tmpUpper = 2 * (g_imu.transform.rotation.w * g_imu.transform.rotation.z +
+                               g_imu.transform.rotation.x * g_imu.transform.rotation.y);
+        double tmpDowner = 1 - 2 * (g_imu.transform.rotation.y * g_imu.transform.rotation.y +
+                                    g_imu.transform.rotation.z * g_imu.transform.rotation.z);
+
+        double yaw = atan2(tmpUpper, tmpDowner);
+        voInfo.data.push_back(yaw);
 
         cout << mo->velocity_in_global_x << endl;
         cout << mo->velocity_in_global_y << endl;
