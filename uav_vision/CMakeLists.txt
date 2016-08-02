@@ -38,7 +38,7 @@ include_directories(
 add_executable(detecColor src/deteColor.cpp)
 target_link_libraries(detecColor ${catkin_LIBRARIES} ${OpenCV_LIBRARIES})
 
-add_executable(detecDoll src/detectDoll.cxx src/Object.cxx)
+add_executable(detecDoll src/detectDoll.cxx)
 target_link_libraries(detecDoll ${catkin_LIBRARIES} ${OpenCV_LIBRARIES})
 
 add_executable(detecMarker src/detectMarker.cxx )

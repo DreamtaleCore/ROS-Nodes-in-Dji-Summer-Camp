@@ -32,9 +32,10 @@ const float missioHeight = 1.700;
 const float flightHeight = 0.800;
 
 // void coreLogicFunc(vector<int> &_cmd)
-void callBackMarkerCtrl(const std_msgs::Int32MultiArray::ConstPtr& msg)
+void callBackLogicalCtrl(const std_msgs::Int32MultiArray::ConstPtr& msg)
 {
     int cmd = msg->data[0];
+    cout << "I got the cmd: " << cmd << endl;
     double correntX, correntY, correntZ;
     switch (cmd) {
     case uavGetCtrlAbility:
@@ -81,45 +82,26 @@ void callBackMarkerCtrl(const std_msgs::Int32MultiArray::ConstPtr& msg)
     }
 }
 
-//void callBackMarkerCtrl(const std_msgs::Float32MultiArray::ConstPtr& msg)
-//{
-//    vector<int> cmd;
-//    if(msg->data[3] > 50.0)
-//    {
-//        cmd.push_back(uavMovLeft);
-//        coreLogicFunc(cmd);
-//    }
-//    if(msg->data[3] < -50.0)
-//    {
-//        cmd.push_back(uavMovRight);
-//        coreLogicFunc(cmd);
-//    }
-//    if(msg->data[4] > 50.0)
-//    {
-//        cmd.push_back(uavMovBack);
-//        coreLogicFunc(cmd);
-//    }
-//    if(msg->data[4] < -50.0)
-//    {
-//        cmd.push_back(uavMovFront);
-//        coreLogicFunc(cmd);
-//    }
-//}
-
 int main(int argc, char *argv[])
 {
     ros::init(argc, argv, "onboard_sdk");
     ros::NodeHandle nh;
+    ros::Rate loopRate(100);
 
     drone = new DJIDrone(nh);
 
     //ros::Subscriber subMarkTrack;
     ros::Subscriber subCoreLogic;
 
-    //subMarkTrack = nh.subscribe("/uav_vision/findMarker", 1000, callBackMarkerCtrl);
-    subCoreLogic = nh.subscribe("/uav_ctrl/onboard", 1000, callBackMarkerCtrl);
+    //subMarkTrack = nh.subscribe("/uav_vision/findMarker", 100, callBackMarkerCtrl);
+    subCoreLogic = nh.subscribe("/uav_ctrl/onboard", 100, callBackLogicalCtrl);
 
-    ros::spin();
+    while(nh.ok())
+    {
+        ros::spinOnce();
+        loopRate.sleep();
+
+    }
 
     return 0;
 }

@@ -274,12 +274,12 @@ void callBackDollTrack(const sensor_msgs::ImageConstPtr& msg)
 
 int main(int argc, char* argv[])
 {
-    ros::init(argc, argv, "find_doll");
+    ros::init(argc, argv, "find_marker");
     ros::NodeHandle nh;
     image_transport::ImageTransport it(nh);
     image_transport::Subscriber subImg;
 
-    pubMarkerPosi = nh.advertise<std_msgs::Float32MultiArray>("/uav_vision/findMarker", 1000);
+    pubMarkerPosi = nh.advertise<std_msgs::Float32MultiArray>("/uav_vision/detectMarker", 1000);
 
     subImg = it.subscribe("/uav_cam/image", 5, callBackDollTrack);
 

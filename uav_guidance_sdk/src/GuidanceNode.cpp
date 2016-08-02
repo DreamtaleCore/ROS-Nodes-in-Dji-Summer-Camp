@@ -132,6 +132,7 @@ int my_callback(int data_type, int data_len, char *content)
     }
 
     /* imu */
+    geometry_msgs::TransformStamped g_imu;
     if ( e_imu == data_type && NULL != content )
     {
         imu *imu_data = (imu*)content;
@@ -141,7 +142,6 @@ int my_callback(int data_type, int data_len, char *content)
  	
         }
     	// publish imu data
-		geometry_msgs::TransformStamped g_imu;
 		g_imu.header.frame_id = "guidance";
 		g_imu.header.stamp    = ros::Time::now();
 		g_imu.transform.translation.x = imu_data->acc_x;

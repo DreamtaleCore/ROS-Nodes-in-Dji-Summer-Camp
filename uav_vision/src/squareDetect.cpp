@@ -1,39 +1,18 @@
-/** @file  Find the color apperent object
- * @author DreamTale
- * @date   Jul 30, 2016
-  */
-
-#include <sstream>
-#include <string>
-#include <iostream>
-#include <vector>
-// Include ros and data transport headers
-#include <ros/ros.h>
-#include <sensor_msgs/image_encodings.h>
-#include <std_msgs/String.h>
-#include <std_msgs/Int16MultiArray.h>
-#include <geometry_msgs/Point32.h>
-#include <geometry_msgs/Vector3.h>
-// Include image transport & bridge
-#include <image_transport/image_transport.h>
-#include <cv_bridge/cv_bridge.h>
-
 #include "squareDetect.h"
+#include <vector>
+#include <iostream>
+#include <math.h>
+#define HsvType int
 
-ros::Publisher pubDollPosi;
-
-// +------------+--------+--------+
-// | color sort | posi_x | posi_y |
-// +------------+--------+--------+
-
-RotatedRect detectSquare(Mat img)
-{
+using namespace std;
+using namespace cv;
+RotatedRect SquareDetect::squareDet(Mat img){
     //split the channel
     vector<Mat> img_split;
     Mat img_single;
     split(img,img_split);
     img_single = img_split[2].clone();
-    vector<vector<Point> > contours;
+    vector<vector<Point>> contours;
     vector<Vec4i> hierarchy;
     float maxContourArea = 0;
     int maxContourArea_index;
@@ -45,29 +24,26 @@ RotatedRect detectSquare(Mat img)
     findContours(img_single, contours,hierarchy,CV_RETR_CCOMP, CV_CHAIN_APPROX_SIMPLE);
 
     // Find the max area of contours
-    for (int i=0;i<contours.size();i++)
-    {
+    for (int i=0;i<contours.size();i++){
         int contourSize = contourArea(contours[i]);
-        if(contourSize > maxContourArea)
-        {
+        if(contourSize > maxContourArea){
             maxContourArea = contourSize;
             maxContourArea_index = i;
         }
     }
     RotatedRect box = minAreaRect(contours[maxContourArea_index]);
     return box;
+
 }
 
-Mat detectDoll(Mat img, RotatedRect box)
-{
+Mat SquareDetect::dollDetect(Mat img, RotatedRect box){
     // Set ROI
     Mat mask(img.rows,img.cols,CV_8UC3,Scalar::all(0));
     Point2f vertex[4];
     box.points(vertex);
-    vector<vector<Point> > maskContours;
+    vector<vector<Point>> maskContours;
     vector<Point> ptr;
-    for(int i=0;i<4;i++)
-    {
+    for(int i=0;i<4;i++){
         ptr.push_back(Point(vertex[i].x,vertex[i].y));
     }
     maskContours.push_back(ptr);
@@ -108,7 +84,7 @@ Mat detectDoll(Mat img, RotatedRect box)
 
     imshow("123",img_threshold_red1);
 
-    vector<vector<Point> > contours_blue, contours_red, contours_yellow;
+    vector<vector<Point>> contours_blue, contours_red, contours_yellow;
     vector<Vec4i> hierarchy_blue, hierarchy_red, hierarchy_yellow;
     findContours(img_threshold_blue,   contours_blue,hierarchy_blue,     CV_RETR_CCOMP, CV_CHAIN_APPROX_SIMPLE);
     findContours(img_threshold_red,    contours_red,hierarchy_red,       CV_RETR_CCOMP, CV_CHAIN_APPROX_SIMPLE);
@@ -138,48 +114,11 @@ Mat detectDoll(Mat img, RotatedRect box)
         }
     }
 
-    imshow("dst",img);
+    imshow("dst", img);
     return img;
 }
 
-
-void callBackDollTrack(const sensor_msgs::ImageConstPtr& msg)
+SquareDetect::SquareDetect()
 {
-    cv_bridge::CvImagePtr cvPtr;
-    cvPtr = cv_bridge::toCvCopy(msg, sensor_msgs::image_encodings::BGR8);
-    Mat src = cvPtr->image;
 
-    imshow("Original Image", src);
-
-    RotatedRect box = detectSquare(src);
-    Point2f vertex[4];
-    box.points(vertex);
-    for(int i=0;i<4;i++)
-    {
-        line(src,vertex[i],vertex[(i+1)%4],Scalar(255,0,0),5);
-    }
-    //rectangle(img_src,box,Scalar(0,255,0),5);
-
-    Mat imgROI = detectDoll(src, box);
-    //time_start = getTickCount() - time_start;
-    //cout << "run time:" << time_start / getTickFrequency() << "s" << endl;
-    imshow("1",src);
-
-    waitKey(10);
-}
-
-int main(int argc, char* argv[])
-{
-    ros::init(argc, argv, "find_doll");
-    ros::NodeHandle nh;
-    image_transport::ImageTransport it(nh);
-    image_transport::Subscriber subImg;
-
-    pubDollPosi = nh.advertise<std_msgs::Int16MultiArray>("/uav_vision/findDoll", 1000);
-
-    subImg = it.subscribe("/uav_cam/image", 5, callBackDollTrack);
-
-    ros::spin();
-
-    return 0;
 }

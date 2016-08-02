@@ -7,10 +7,10 @@
 
 #include <opencv2/opencv.hpp>
 
-double KP_X = 0.01;
-double KP_Y = 0.01;
-double KP_Z = 0.01;
-double KP_W = 0.01; // yaw
+double KP_X = 0.1;
+double KP_Y = 0.1;
+double KP_Z = 0.1;
+double KP_W = 0.1;  // yaw
 double KI_X = 0.01;
 double KI_Y = 0.01;
 double KI_Z = 0.01;
@@ -55,7 +55,7 @@ void callBackGroundBuffCar(const std_msgs::String::ConstPtr& msg)
 
 }
 
-void callBackGuidanceVoInfo(const std_msgs::Float64MultiArray::ConstPtr& msg)
+void callBackGuidanceVoInfo(const std_msgs::Float32MultiArray::ConstPtr& msg)
 {
     for(int i = 0; i < msg->data.size(); i++)
     {
@@ -63,12 +63,12 @@ void callBackGuidanceVoInfo(const std_msgs::Float64MultiArray::ConstPtr& msg)
     }
 }
 
-void callBackUavVisionDoll(const std_msgs::Float64MultiArray::ConstPtr& msg)
+void callBackUavVisionDoll(const std_msgs::Float32MultiArray::ConstPtr& msg)
 {
 
 }
 
-void callBackUavVisionMarker(const std_msgs::Float64MultiArray::ConstPtr& msg)
+void callBackUavVisionMarker(const std_msgs::Float32MultiArray::ConstPtr& msg)
 {
     // Insure the drone's status is OK!
     if(uavStatus == uavStateReady || uavStatus == uavStateRunning)
@@ -114,13 +114,23 @@ void uavSetup()
     // Step 1: Get the permission of UAV control
     std_msgs::Int32MultiArray initCmd;
     initCmd.data.push_back(uavGetCtrlAbility);
-    pubOnboard.publish(initCmd);
+    int sendTimes = 500;
+    while(sendTimes--)
+    {
+        usleep(1000);
+        pubOnboard.publish(initCmd);
+    }
 
     // Step 2: the UAV take off
     initCmd.data.clear();
     initCmd.data.push_back(uavTakeOff);
-    pubOnboard.publish(initCmd);
-    usleep(50000000);           // Wait the drone setup ok
+    sendTimes = 50;
+    while(sendTimes--)
+    {
+        usleep(1000);
+        pubOnboard.publish(initCmd);
+    }
+    sleep(7);           // Wait the drone setup ok
 
     // Step 3: the UAV is ready, Let's take missions
     uavStatus = uavStateReady;
@@ -130,6 +140,7 @@ int main(int argc, char *argv[])
 {
     ros::init(argc, argv, "uavCoreLogic");
     ros::NodeHandle nhPub, nhSub;
+    ros::Rate loopRate(100);
 
     ros::param::get("~KP_X", KP_X);
     ros::param::get("~KP_Y", KP_Y);
@@ -153,6 +164,8 @@ int main(int argc, char *argv[])
     pubServo   = nhPub.advertise<std_msgs::String>("/uav_ctrl/servo",   100);
     pubOnboard = nhPub.advertise<std_msgs::Int32MultiArray>("/uav_ctrl/onboard", 100);
 
+    uavSetup();
+
     subGroundCar         = nhSub.subscribe("/uav_parter/buffCar",      100, callBackGroundBuffCar  );
     subUavGuidanceVoInfo = nhSub.subscribe("/uav_guider/velPosByVo",   100, callBackGuidanceVoInfo );
     subUavOnboard        = nhSub.subscribe("/uav_motion/onboard",      100, callBackOnboard        );
@@ -162,6 +175,7 @@ int main(int argc, char *argv[])
     while (nhPub.ok() && nhSub.ok())
     {
         ros::spinOnce();
+        loopRate.sleep();
 
     }
 
