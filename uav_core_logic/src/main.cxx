@@ -25,30 +25,34 @@ ros::Publisher pubOnboard;
 
 enum uavStatusInfo
 {
-    uavStateWait  = 0xf00,
-    uavStateReady,
-    uavStateRunning
+    uavStWait       = 0x001,
+    uavStTakeOff    = 0x002,
+    uavStReady      = 0x004,
+    uavStFlight     = 0x008,
+    uavStGripDoll   = 0x010,
+    uavStThrowDoll  = 0x020,
+    uavStHover      = 0x040
 };
 
 // The sort of uav control signals
 enum uavCtrlSignal
 {
-    uavTakeOff = 0,
-    uavLanding,
-    uavHangSlient,
-    uavGoFlightHeigh,
-    uavGoMissionHeigh,
-    uavMovVelocity,
-    uavForceMannul,
-    uavGetCtrlAbility,
-    uavControlSum
+    uavCsTakeOff = 0,
+    uavCsLanding,
+    uavCsHangSlient,
+    uavCsGoFlightHeigh,
+    uavCsGoMissionHeigh,
+    uavCsMovVelocity,
+    uavCsForceMannul,
+    uavCsGetCtrlAbility,
+    uavCsControlSum
 };
 
-volatile int uavStatus = uavStateWait;
-// +-------+-------+-------+-------+-------+-------+---------+
-// | vel_x | vel_y | vel_z | pos_x | pos_y | pos_z | pos_yaw |
-// +-------+-------+-------+-------+-------+-------+---------+
-volatile double droneVoInfo[6] = {0.0};
+volatile int uavStatus = uavStWait;
+// +-------+-------+-------+-------+-------+-------+---------+-------+-------+
+// | vel_x | vel_y | vel_z | pos_x | pos_y | pos_z | pos_yaw | ult_z | ult_r |
+// +-------+-------+-------+-------+-------+-------+---------+-------+-------+
+volatile double droneVoInfo[7] = {0.0};
 
 void callBackGroundBuffCar(const std_msgs::String::ConstPtr& msg)
 {
@@ -60,21 +64,60 @@ void callBackGuidanceVoInfo(const std_msgs::Float32MultiArray::ConstPtr& msg)
     for(int i = 0; i < msg->data.size(); i++)
     {
         droneVoInfo[i] = msg->data[i];
+
     }
 }
 
-void callBackUavVisionDoll(const std_msgs::Float32MultiArray::ConstPtr& msg)
+void callBackUavVisionDoll(const std_msgs::Int32MultiArray::ConstPtr& msg)
 {
+    // Step1: Wait the drone get ready and mission is grip dolls
+    if(uavStatus == (uavStGripDoll | uavStReady) ||
+            uavStatus == (uavStTakeOff | uavStReady))
+    {
+        // Step2 : Track the doll so make the doll at center of view
+        int colorSort = msg->data[0];
+        int posiX = msg->data[1];
+        int posiY = msg->data[2];
+        // Method 1: all dolls heaped by color, we grip dolls by the order of color
+        // A strong assum: The dolls DO NOT disturbed by drone's wind
+        // Step 2.1.1 Have found the aim color
+        // Socket like: |r_x|r_y|y_x|y_y|b_x|b_y|
+        for(int i = 0; i < 3; i++)
+        {
+            // The selected color is verfied
+            if(msg->data[i] > 0 && msg->data[2 * i - 1] > 0)
+            {
+                // Already know the position diff between drone and doll
+                // Adjust drone by PD
+                std_msgs::Float32MultiArray dollCmd;
+                dollCmd.data.push_back(uavCsMovVelocity);
+//                dollCmd.data.push_back(x_cmd);
+//                dollCmd.data.push_back(y_cmd0);
+                pubOnboard.publish(dollCmd);
 
+
+
+            }
+        }
+    }
 }
 
 void callBackUavVisionMarker(const std_msgs::Float32MultiArray::ConstPtr& msg)
 {
-    // Insure the drone's status is OK!
-    if(uavStatus == uavStateReady || uavStatus == uavStateRunning)
+    // Insure the drone is not busy and is flying
+    if(uavStatus == (uavStReady | uavStFlight))
     {
         double dimX = msg->data[3];
         double dimY = msg->data[4];
+
+        // Adjust the drone direction by PD control
+        // call the function
+        uavStatus = uavStFlight;
+        // Waiting for cmd realized (low maybe)
+        usleep(1000);
+        uavStatus = uavStReady | uavStFlight;
+
+        // VVVVVV Below the code is not safeVVVVVVV
         //Method 1: Use P-D to control the odrone
         if(droneVoInfo[0] > 0.1 || droneVoInfo[0] < - 0.1)
         {
@@ -92,11 +135,12 @@ void callBackUavVisionMarker(const std_msgs::Float32MultiArray::ConstPtr& msg)
 
         std_msgs::Int32MultiArray pdCtrlMsg;
 
-        pdCtrlMsg.data.push_back(uavMovVelocity);
+        pdCtrlMsg.data.push_back(uavCsMovVelocity);
         pdCtrlMsg.data.push_back((int)(ctrlX * 100));
         pdCtrlMsg.data.push_back((int)(ctrlY * 100));
         pdCtrlMsg.data.push_back(0);
         pdCtrlMsg.data.push_back(0);
+        // ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
         pubOnboard.publish(pdCtrlMsg);
     }
@@ -109,12 +153,13 @@ void callBackOnboard(const std_msgs::String::ConstPtr& msg)
     ROS_INFO(strInfo.c_str());
 }
 
-void uavSetup()
+void droneSetup()
 {
     // Step 1: Get the permission of UAV control
     std_msgs::Int32MultiArray initCmd;
-    initCmd.data.push_back(uavGetCtrlAbility);
-    int sendTimes = 500;
+    initCmd.data.push_back(uavCsGetCtrlAbility);
+    int sendTimes = 400;
+    uavStatus = uavStWait;
     while(sendTimes--)
     {
         usleep(1000);
@@ -122,9 +167,10 @@ void uavSetup()
     }
 
     // Step 2: the UAV take off
+    uavStatus = uavStTakeOff;
     initCmd.data.clear();
-    initCmd.data.push_back(uavTakeOff);
-    sendTimes = 50;
+    initCmd.data.push_back(uavCsTakeOff);
+    sendTimes = 30;
     while(sendTimes--)
     {
         usleep(1000);
@@ -133,7 +179,7 @@ void uavSetup()
     sleep(7);           // Wait the drone setup ok
 
     // Step 3: the UAV is ready, Let's take missions
-    uavStatus = uavStateReady;
+    uavStatus = uavStTakeOff | uavStReady;
 }
 
 int main(int argc, char *argv[])
@@ -155,6 +201,11 @@ int main(int argc, char *argv[])
     ros::param::get("~KD_Z", KD_Z);
     ros::param::get("~KD_W", KD_W);
 
+    cout << KP_X << endl
+         << KP_Y << endl
+         << KD_X << endl
+         << KD_Y << endl;
+
     ros::Subscriber subGroundCar;
     ros::Subscriber subUavGuidanceVoInfo;
     ros::Subscriber subUavVisionDoll;
@@ -164,7 +215,8 @@ int main(int argc, char *argv[])
     pubServo   = nhPub.advertise<std_msgs::String>("/uav_ctrl/servo",   100);
     pubOnboard = nhPub.advertise<std_msgs::Int32MultiArray>("/uav_ctrl/onboard", 100);
 
-    uavSetup();
+    // Be ready for drone take missions
+    droneSetup();
 
     subGroundCar         = nhSub.subscribe("/uav_parter/buffCar",      100, callBackGroundBuffCar  );
     subUavGuidanceVoInfo = nhSub.subscribe("/uav_guider/velPosByVo",   100, callBackGuidanceVoInfo );
@@ -176,7 +228,6 @@ int main(int argc, char *argv[])
     {
         ros::spinOnce();
         loopRate.sleep();
-
     }
 
     return 0;

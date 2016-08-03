@@ -1,0 +1,17 @@
+<?xml version = "1.0"?>
+<launch>
+    <node name = "coreLogic" pkg = "uav_core_logic" type = "coreLogic" output = "screen">
+		<param name = "KP_X" type = "double" value = "100.0" />
+		<param name = "KP_Y" type = "double" value = "50.0" />
+		<param name = "KP_Z" type = "double" value = "0.1" />
+		<param name = "KP_W" type = "double" value = "0.1" />       <!--yaw-->
+		<param name = "KI_X" type = "double" value = "0.1" />                   <!--not used-->
+		<param name = "KI_Y" type = "double" value = "0.1" />                   <!--not used-->
+		<param name = "KI_Z" type = "double" value = "0.1" />                   <!--not used-->
+		<param name = "KI_W" type = "double" value = "0.1" />       <!--yaw-->  <!--not used-->
+		<param name = "KD_X" type = "double" value = "0.1" />
+		<param name = "KD_Y" type = "double" value = "0.000001" />
+		<param name = "KD_Z" type = "double" value = "0.01" />
+		<param name = "KD_W" type = "double" value = "0.01" />       <!--yaw-->
+    </node>
+</launch>

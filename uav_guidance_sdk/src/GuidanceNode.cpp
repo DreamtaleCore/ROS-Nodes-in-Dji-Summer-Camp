@@ -197,6 +197,8 @@ int my_callback(int data_type, int data_len, char *content)
 	}
 
     /* ultrasonic */
+    // Added by DreamTale my
+    double myUltrasonicData, myUltrasonicReliability;
     if ( e_ultrasonic == data_type && NULL != content )
     {
         ultrasonic_data *ultrasonic = (ultrasonic_data*)content;
@@ -206,6 +208,8 @@ int my_callback(int data_type, int data_len, char *content)
             {
                 printf( "ultrasonic distance: %f, reliability: %d\n", ultrasonic->ultrasonic[d] * 0.001f, (int)ultrasonic->reliability[d] );
             }
+            myUltrasonicData = ultrasonic->ultrasonic[0];
+            myUltrasonicReliability = ultrasonic->reliability[0];
         }
 	
 		// publish ultrasonic data
@@ -247,9 +251,9 @@ int my_callback(int data_type, int data_len, char *content)
 
         // Changed by DreamTale
         // NO time stamp, just publish info
-        // +-------+-------+-------+-------+-------+-------+---------+
-        // | vel_x | vel_y | vel_z | pos_x | pos_y | pos_z | pos_yaw |
-        // +-------+-------+-------+-------+-------+-------+---------+
+        // +-------+-------+-------+-------+-------+-------+---------+-------+-------+
+        // | vel_x | vel_y | vel_z | pos_x | pos_y | pos_z | pos_yaw | ult_z | ult_r |
+        // +-------+-------+-------+-------+-------+-------+---------+-------+-------+
         std_msgs::Float32MultiArray voInfo;
         //The unit is millimeter/second
         voInfo.data.push_back(mo->velocity_in_global_x);
@@ -267,6 +271,10 @@ int my_callback(int data_type, int data_len, char *content)
 
         double yaw = atan2(tmpUpper, tmpDowner);
         voInfo.data.push_back(yaw);
+
+        // For ultrasonic below data
+        voInfo.data.push_back(myUltrasonicData);
+        voInfo.data.push_back(myUltrasonicReliability);
 
         cout << mo->velocity_in_global_x << endl;
         cout << mo->velocity_in_global_y << endl;

@@ -15,15 +15,15 @@ using namespace DJI::onboardSDK;
 // The sort of uav control signals
 enum uavCtrlSignal
 {
-    uavTakeOff = 0,
-    uavLanding,
-    uavHangSlient,
-    uavGoFlightHeigh,
-    uavGoMissionHeigh,
-    uavMovVelocity,
-    uavForceMannul,
-    uavGetCtrlAbility,
-    uavControlSum
+    uavCsTakeOff = 0,
+    uavCsLanding,
+    uavCsHangSlient,
+    uavCsGoFlightHeigh,
+    uavCsGoMissionHeigh,
+    uavCsMovVelocity,
+    uavCsForceMannul,
+    uavCsGetCtrlAbility,
+    uavCsControlSum
 };
 
 // Define a global DIJ drone
@@ -38,11 +38,11 @@ void callBackLogicalCtrl(const std_msgs::Int32MultiArray::ConstPtr& msg)
     cout << "I got the cmd: " << cmd << endl;
     double correntX, correntY, correntZ;
     switch (cmd) {
-    case uavGetCtrlAbility:
+    case uavCsGetCtrlAbility:
         drone->request_sdk_permission_control();
         break;
 
-    case uavMovVelocity:
+    case uavCsMovVelocity:
         drone->attitude_control( Flight::HorizontalLogic::HORIZONTAL_POSITION |
                                  Flight::VerticalLogic::VERTICAL_VELOCITY |
                                  Flight::YawLogic::YAW_ANGLE |
@@ -55,28 +55,28 @@ void callBackLogicalCtrl(const std_msgs::Int32MultiArray::ConstPtr& msg)
         usleep(20000);
         break;
 
-    case uavTakeOff:
+    case uavCsTakeOff:
         drone->takeoff();   // fly to 1.2m
 
         break;
-    case uavGoFlightHeigh:
+    case uavCsGoFlightHeigh:
 
 
 
         break;
-    case uavGoMissionHeigh:
+    case uavCsGoMissionHeigh:
 
         break;
-    case uavLanding:
+    case uavCsLanding:
 
         break;
-    case uavForceMannul:
+    case uavCsForceMannul:
         // If wanna switch to mannual control, release the control ability
         drone->release_sdk_permission_control();
 
         break;
 
-    case uavHangSlient:     // Default status is hang slient
+    case uavCsHangSlient:     // Default status is hang slient
     default:
         break;
     }

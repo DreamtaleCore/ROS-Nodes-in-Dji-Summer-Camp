@@ -12,6 +12,7 @@
 #include <sensor_msgs/image_encodings.h>
 #include <std_msgs/String.h>
 #include <std_msgs/Int16MultiArray.h>
+#include <std_msgs/Int32MultiArray.h>
 #include <geometry_msgs/Point32.h>
 #include <geometry_msgs/Vector3.h>
 // Include image transport & bridge
@@ -114,11 +115,21 @@ Mat detectDoll(Mat img, RotatedRect box)
     findContours(img_threshold_red,    contours_red,hierarchy_red,       CV_RETR_CCOMP, CV_CHAIN_APPROX_SIMPLE);
     findContours(img_threshold_yellow, contours_yellow,hierarchy_yellow, CV_RETR_CCOMP, CV_CHAIN_APPROX_SIMPLE);
     // Find the max area of contours
-    for (int i=0;i<contours_blue.size();i++){
+    for (int i=0;i<contours_blue.size();i++)
+    {
         int contourSize = contourArea(contours_blue[i]);
-        if(contourSize>6000){
+        if(contourSize>6000)
+        {
             Rect box = boundingRect(contours_blue[i]);
             rectangle(img,box,Scalar(255,0,0),5);
+            // Publish BLUE the doll position
+            std_msgs::Int32MultiArray outPubMsg;
+            outPubMsg.data.push_back(2);
+            outPubMsg.data.push_back(box.x + box.width / 2);
+            outPubMsg.data.push_back(box.y + box.height / 2);
+
+            pubDollPosi.publish(outPubMsg);
+
         }
     }
 
@@ -127,6 +138,13 @@ Mat detectDoll(Mat img, RotatedRect box)
         if(contourSize>10000){
             Rect box = boundingRect(contours_red[i]);
             rectangle(img,box,Scalar(0,0,255),5);
+            // Publish BLUE the doll position
+            std_msgs::Int32MultiArray outPubMsg;
+            outPubMsg.data.push_back(0);
+            outPubMsg.data.push_back(box.x + box.width / 2);
+            outPubMsg.data.push_back(box.y + box.height / 2);
+
+            pubDollPosi.publish(outPubMsg);
         }
     }
 
@@ -135,6 +153,13 @@ Mat detectDoll(Mat img, RotatedRect box)
         if(contourSize>10000){
             Rect box = boundingRect(contours_yellow[i]);
             rectangle(img,box,Scalar(0,255,255),5);
+            // Publish BLUE the doll position
+            std_msgs::Int32MultiArray outPubMsg;
+            outPubMsg.data.push_back(1);
+            outPubMsg.data.push_back(box.x + box.width / 2);
+            outPubMsg.data.push_back(box.y + box.height / 2);
+
+            pubDollPosi.publish(outPubMsg);
         }
     }
 
@@ -174,12 +199,17 @@ int main(int argc, char* argv[])
     ros::NodeHandle nh;
     image_transport::ImageTransport it(nh);
     image_transport::Subscriber subImg;
+    ros::Rate loopRate(100);
 
-    pubDollPosi = nh.advertise<std_msgs::Int16MultiArray>("/uav_vision/findDoll", 1000);
+    pubDollPosi = nh.advertise<std_msgs::Int32MultiArray>("/uav_vision/detectDoll", 100);
 
     subImg = it.subscribe("/uav_cam/image", 5, callBackDollTrack);
 
-    ros::spin();
+    while(nh.ok())
+    {
+        loopRate.sleep();
+        ros::spinOnce();
+    }
 
     return 0;
 }
