@@ -20,6 +20,9 @@
 #include <cv_bridge/cv_bridge.h>
 #include "../include/uav_vision/utilities.h"
 
+// Include self defined msg header
+#include <uav_vision/DetectInfo.h>
+
 #include <cmath>
 #define HsvType int
 
@@ -30,7 +33,7 @@
 using namespace std;
 using namespace cv;
 
-ros::Publisher pubMarkerPosi;
+ros::Publisher pubMarkerPosi, pubTest;
 
 Mat Utilities::colorConversion(Mat img, HsvType imgtype){
 
@@ -265,7 +268,6 @@ void callBackDollTrack(const sensor_msgs::ImageConstPtr& msg)
     src = cvPtr->image;
 
     Utilities calcPos;
-    //img_h=test.colorConversion(src_frame,3);
     calcPos.decectMarkerContour(src);
 
     //imshow(windowName, src);
@@ -280,6 +282,8 @@ int main(int argc, char* argv[])
     image_transport::Subscriber subImg;
 
     pubMarkerPosi = nh.advertise<std_msgs::Float32MultiArray>("/uav_vision/detectMarker", 1000);
+
+    pubTest = nh.advertise<uav_vision::DetectInfo>("test", 100);
 
     subImg = it.subscribe("/uav_cam/image", 5, callBackDollTrack);
 

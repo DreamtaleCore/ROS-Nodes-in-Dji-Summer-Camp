@@ -1,0 +1,1 @@
+1. read_cam is not able to use cv_bridge::CvImage to make a topic, cause the base layer of ros's boost has some bugs

@@ -6,6 +6,7 @@
 #include "recvInfo.h"
 
 #include <opencv2/opencv.hpp>
+//#include <uav_vision/DetectInfo.h>
 
 double KP_X = 0.1;
 double KP_Y = 0.1;
@@ -52,7 +53,7 @@ volatile int uavStatus = uavStWait;
 // +-------+-------+-------+-------+-------+-------+---------+-------+-------+
 // | vel_x | vel_y | vel_z | pos_x | pos_y | pos_z | pos_yaw | ult_z | ult_r |
 // +-------+-------+-------+-------+-------+-------+---------+-------+-------+
-volatile double droneVoInfo[7] = {0.0};
+volatile double droneVelPosInfo[7] = {0.0};
 
 void callBackGroundBuffCar(const std_msgs::String::ConstPtr& msg)
 {
@@ -63,7 +64,7 @@ void callBackGuidanceVoInfo(const std_msgs::Float32MultiArray::ConstPtr& msg)
 {
     for(int i = 0; i < msg->data.size(); i++)
     {
-        droneVoInfo[i] = msg->data[i];
+        droneVelPosInfo[i] = msg->data[i];
 
     }
 }
@@ -119,19 +120,19 @@ void callBackUavVisionMarker(const std_msgs::Float32MultiArray::ConstPtr& msg)
 
         // VVVVVV Below the code is not safeVVVVVVV
         //Method 1: Use P-D to control the odrone
-        if(droneVoInfo[0] > 0.1 || droneVoInfo[0] < - 0.1)
+        if(droneVelPosInfo[0] > 0.1 || droneVelPosInfo[0] < - 0.1)
         {
             for(int i = 0; i < 3; i++)
             {
-                cout << droneVoInfo[i] << endl;
+                cout << droneVelPosInfo[i] << endl;
             }
             cout << "*********************" << endl << endl;
         }
         //Control_X = KP_X * (dimX) + KD_X * (-Guidance_velocity);
         //Con
         // Assume We get the velocity
-        double ctrlX = KP_X * (dimX) + KD_X * (- droneVoInfo[0]);
-        double ctrlY = KP_Y * (dimY) + KD_Y * (- droneVoInfo[1]);
+        double ctrlX = KP_X * (dimX) + KD_X * (- droneVelPosInfo[0]);
+        double ctrlY = KP_Y * (dimY) + KD_Y * (- droneVelPosInfo[1]);
 
         std_msgs::Int32MultiArray pdCtrlMsg;
 
@@ -213,7 +214,7 @@ int main(int argc, char *argv[])
     ros::Subscriber subUavOnboard;
 
     pubServo   = nhPub.advertise<std_msgs::String>("/uav_ctrl/servo",   100);
-    pubOnboard = nhPub.advertise<std_msgs::Int32MultiArray>("/uav_ctrl/onboard", 100);
+    pubOnboard = nhPub.advertise<std_msgs::Int32MultiArray>("/uav_ctrl/onboard", 100);  
 
     // Be ready for drone take missions
     droneSetup();

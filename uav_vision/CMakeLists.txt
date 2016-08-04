@@ -11,8 +11,19 @@ find_package(catkin REQUIRED COMPONENTS
   roscpp
   rospy
   sensor_msgs
+  message_generation
   std_msgs
 )
+
+add_message_files(
+	FILES
+	DetectInfo.msg
+)
+
+generate_messages(
+   DEPENDENCIES
+   std_msgs
+ )
 
 catkin_package(
 #  INCLUDE_DIRS include
